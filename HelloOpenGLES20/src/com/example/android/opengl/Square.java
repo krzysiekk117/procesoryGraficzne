@@ -55,7 +55,7 @@ public class Square {
 
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
-    static float squareCoords[] = {
+    float squareCoords[] = {
             -0.5f,  0.5f, 0.0f,   // top left
             -0.5f, -0.5f, 0.0f,   // bottom left
              0.5f, -0.5f, 0.0f,   // bottom right
@@ -70,7 +70,13 @@ public class Square {
     /**
      * Sets up the drawing object data for use in an OpenGL ES context.
      */
-    public Square() {
+
+    public void setColor(float col[]){
+        color = col;
+    };
+
+    public Square(float coords[]) {
+        squareCoords = coords;
         // initialize vertex byte buffer for shape coordinates
         ByteBuffer bb = ByteBuffer.allocateDirect(
         // (# of coordinate values * 4 bytes per float)

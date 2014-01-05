@@ -38,6 +38,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private Triangle mTriangle;
     private Square   mSquare;
     private  Piramid mPiramid;
+    private szescian mszescian;
 
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
@@ -56,7 +57,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 
 
-        mPiramid = new Piramid();
+//        mPiramid = new Piramid();
+        mszescian = new szescian();
     }
 
     @Override
@@ -97,7 +99,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
 
         // Draw triangle
-        mPiramid.draw(scratch);
+//        mPiramid.draw(scratch);
+        mszescian.draw(scratch);
     }
 
     @Override
