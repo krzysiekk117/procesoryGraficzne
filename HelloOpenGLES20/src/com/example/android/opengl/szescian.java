@@ -21,6 +21,7 @@ public class szescian {
 
 
         };
+    // zmiana madzi
 
         Square front;
         Square left;
