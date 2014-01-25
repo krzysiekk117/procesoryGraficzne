@@ -116,11 +116,11 @@ public class szescian {
 
     public void draw(float[] mvpMatrix) {
         front.draw(mvpMatrix);
-//        left.draw(mvpMatrix);
+        left.draw(mvpMatrix);
         right.draw(mvpMatrix);
         back.draw(mvpMatrix);
-//        bottom1.draw(mvpMatrix);
-//        bottom2.draw(mvpMatrix);
+        bottom1.draw(mvpMatrix);
+        bottom2.draw(mvpMatrix);
     }
 
 }
