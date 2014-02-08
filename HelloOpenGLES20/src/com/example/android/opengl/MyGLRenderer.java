@@ -42,7 +42,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private Triangle mTriangle;
     private Square   mSquare;
     private  Piramid mPiramid;
-//    private szescian mszescian;
+    private szescian mszescian;
 
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
@@ -62,19 +62,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 
 //        mPiramid = new Piramid(context);
-//        mszescian = new szescian();
-
-        mSquare = new Square(Square.squareCoords);
-        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex);
-
-        float texCords[] = {
-                1f,1f,
-                0f,1f,
-                0f,0f,
-                1f,0f
-        };
-
-        mSquare.setTexture(bitmap,texCords);
+        mszescian = new szescian(context);
     }
 
 
@@ -116,7 +104,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
 
         // Draw triangle
-        mSquare.draw(scratch);
+        mszescian.draw(scratch);
 //        mTriangle.draw(scratch);
     }
 

@@ -1,5 +1,9 @@
 package com.example.android.opengl;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 /**
  * Created by krzysztofbury on 05.01.2014.
  */
@@ -30,9 +34,16 @@ public class szescian {
         Square bottom1;
         Square bottom2;
 
-        public szescian() {
+        public szescian(Context context) {
 
+            float texCords[] = {
+                    1f,1f,
+                    0f,1f,
+                    0f,0f,
+                    1f,0f
+            };
 
+            Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex);
         float frontCoords[] = {
                 szescianCoords[21],szescianCoords[22],szescianCoords[23],
                 szescianCoords[9],szescianCoords[10],szescianCoords[11],
@@ -41,10 +52,10 @@ public class szescian {
             };
 
             front = new Square(frontCoords);  //czerwony
-            float colFront[] = {1.0f,0f,0f,1f};
-            front.setColor(colFront);
+            front.setTexture(bitmap,texCords);
 
 
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex1);
             float rightCoords[] = {
                     szescianCoords[18],szescianCoords[19],szescianCoords[20],
                     szescianCoords[6],szescianCoords[7],szescianCoords[8],
@@ -53,9 +64,9 @@ public class szescian {
             };
 
             right = new Square(rightCoords); //zielony
-            float colRight[] = {0.0f,1f,0f,1f};
-            right.setColor(colRight);
+            right.setTexture(bitmap, texCords);
 
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex2);
             float backCoords[] = {
                     szescianCoords[9],szescianCoords[10],szescianCoords[11],
                     szescianCoords[6],szescianCoords[7],szescianCoords[8],
@@ -65,11 +76,10 @@ public class szescian {
             };
 
 
-            back = new Square(backCoords); //niebeski
-            float colBack[] = {0.0f,0.0f,1.0f,1.0f};
-            back.setColor(colBack);
+            back = new Square(backCoords); //niebeski 
+            back.setTexture(bitmap, texCords);
 
-
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex3);
             float leftCoords[] = {
                    szescianCoords[0],szescianCoords[1],szescianCoords[2],
                    szescianCoords[3],szescianCoords[4],szescianCoords[5],
@@ -79,11 +89,11 @@ public class szescian {
             };
 
             left = new Square(leftCoords);//zolty
-            float colLeft[] = {1.0f,1.0f,0.0f,1.0f};
-            left.setColor(colLeft);
+
+            left.setTexture(bitmap, texCords);
 
 
-
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex4);
             float bottom1Coords[] = {
                     szescianCoords[21],szescianCoords[22],szescianCoords[23],
                     szescianCoords[18],szescianCoords[19],szescianCoords[20],
@@ -92,10 +102,10 @@ public class szescian {
             };
 
             bottom1 = new Square(bottom1Coords);  //fioletowy
-            float colBottom1[] = {1.0f,0.0f,1.0f,1.0f};
-            bottom1.setColor(colBottom1);
 
+            bottom1.setTexture(bitmap, texCords);
 
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex5);
             float bottom2Coords[] = {
                     szescianCoords[21],szescianCoords[22],szescianCoords[23],
                     szescianCoords[18],szescianCoords[19],szescianCoords[20],
@@ -104,8 +114,7 @@ public class szescian {
             };
 
             bottom2 = new Square(bottom2Coords);  //biały
-            float colBottom2[] = {1.0f,1.0f,1.0f,1.0f};
-            bottom2.setColor(colBottom2);
+            bottom2.setTexture(bitmap, texCords);
 
         }
 
