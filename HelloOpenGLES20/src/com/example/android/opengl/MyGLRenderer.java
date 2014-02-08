@@ -61,7 +61,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 
 
-        mPiramid = new Piramid();
+        mPiramid = new Piramid(context);
 //        mszescian = new szescian();
 
 
