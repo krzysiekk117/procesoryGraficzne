@@ -18,6 +18,9 @@ package com.example.android.opengl;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -35,10 +38,11 @@ import android.util.Log;
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 
     private static final String TAG = "MyGLRenderer";
+    public Context context;
     private Triangle mTriangle;
     private Square   mSquare;
     private  Piramid mPiramid;
-    private szescian mszescian;
+//    private szescian mszescian;
 
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
@@ -58,8 +62,21 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 
 //        mPiramid = new Piramid();
-        mszescian = new szescian();
+//        mszescian = new szescian();
+
+        mTriangle = new Triangle(Triangle.triangleCoords);
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex);
+
+        float texCords[] = {
+                0.5f,1.0f,
+                0f,0f,
+                1f,0f
+        };
+
+        mTriangle.setTexture(bitmap,texCords);
+
     }
+
 
     @Override
     public void onDrawFrame(GL10 unused) {
@@ -100,7 +117,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
         // Draw triangle
 //        mPiramid.draw(scratch);
-        mszescian.draw(scratch);
+        mTriangle.draw(scratch);
     }
 
     @Override

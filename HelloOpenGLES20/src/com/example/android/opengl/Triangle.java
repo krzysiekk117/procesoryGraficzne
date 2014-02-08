@@ -19,7 +19,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 /**
  * A two-dimensional triangle for use as a drawn object in OpenGL ES 2.0.
@@ -45,11 +47,38 @@ public class Triangle {
             "  gl_FragColor = vColor;" +
             "}";
 
+    private final String textureVertexShaderCode =
+                    " uniform mat4 uMVPMatrix;" +
+                    "attribute vec4 vPosition;  \n" +
+                    "attribute vec2 a_texCoord;   \n" +
+                    "varying vec2 v_texCoord;     \n" +
+                    "void main()                  \n" +
+                    "{                            \n" +
+                    "   gl_Position = uMVPMatrix * vPosition; \n" +
+                    "   v_texCoord = a_texCoord;  \n" +
+                    "}                            \n";
+
+    private final String textureFragmentShaderCode =
+            "precision mediump float;                            \n" +
+                    "varying vec2 v_texCoord;                            \n" +
+                    "uniform sampler2D s_texture;                        \n" +
+                    "void main()                                         \n" +
+                    "{                                                   \n" +
+                    "  gl_FragColor = texture2D(s_texture, v_texCoord);  \n" +
+                    "}                                                   \n";
+
+
     private final FloatBuffer vertexBuffer;
-    private final int mProgram;
+    private int mProgram;
     private int mPositionHandle;
+    private int mTexCordsHandle;
     private int mColorHandle;
+    private int mSamplerLoc;
     private int mMVPMatrixHandle;
+
+    private boolean hasTexture;
+    private FloatBuffer textureBuffer;  // buffer holding the texture coordinates
+
 
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
@@ -64,6 +93,9 @@ public class Triangle {
 
     float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 0.0f };
 
+
+    private int[] textures = new int[1];
+    float textureCoords[];
     /**
      * Sets up the drawing object data for use in an OpenGL ES context.
      */
@@ -73,8 +105,45 @@ public class Triangle {
     }
 
 
+    public void setTexture(Bitmap tex,float texCords[]){
+        hasTexture = true;
+        textureCoords = texCords;
+
+
+        ByteBuffer bb = ByteBuffer.allocateDirect( textureCoords.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+        textureBuffer = bb.asFloatBuffer();
+        textureBuffer.put(textureCoords);
+        textureBuffer.position(0);
+
+        GLES20.glGenTextures(1, textures, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, tex, 0);
+
+        tex.recycle();
+
+
+
+        // prepare shaders and OpenGL program
+        int vertexShader = MyGLRenderer.loadShader(
+                GLES20.GL_VERTEX_SHADER, textureVertexShaderCode);
+        int fragmentShader = MyGLRenderer.loadShader(
+                GLES20.GL_FRAGMENT_SHADER, textureFragmentShaderCode);
+
+        mProgram = GLES20.glCreateProgram();             // create empty OpenGL Program
+        GLES20.glAttachShader(mProgram, vertexShader);   // add the vertex shader to program
+        GLES20.glAttachShader(mProgram, fragmentShader); // add the fragment shader to program
+        GLES20.glLinkProgram(mProgram);                  // create OpenGL program executables
+
+
+
+
+    }
 
     public Triangle(float cords[]) {
+        hasTexture = false;
         triangleCoords = cords;
         // initialize vertex byte buffer for shape coordinates
         ByteBuffer bb = ByteBuffer.allocateDirect(
@@ -100,6 +169,10 @@ public class Triangle {
         GLES20.glAttachShader(mProgram, vertexShader);   // add the vertex shader to program
         GLES20.glAttachShader(mProgram, fragmentShader); // add the fragment shader to program
         GLES20.glLinkProgram(mProgram);                  // create OpenGL program executables
+
+
+
+
     }
 
     /**
@@ -112,6 +185,53 @@ public class Triangle {
         // Add program to OpenGL environment
         GLES20.glUseProgram(mProgram);
 
+        if (hasTexture){
+            // get handle to vertex shader's vPosition member
+            mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
+
+            // Enable a handle to the triangle vertices
+            GLES20.glEnableVertexAttribArray(mPositionHandle);
+
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                    mPositionHandle, COORDS_PER_VERTEX,
+                    GLES20.GL_FLOAT, false,
+                    vertexStride, vertexBuffer);
+
+
+            mTexCordsHandle = GLES20.glGetAttribLocation(mProgram, "a_texCoord");
+
+            // Enable a handle to the texture vertices
+            GLES20.glEnableVertexAttribArray(mTexCordsHandle);
+
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                    mTexCordsHandle, 2,
+                    GLES20.GL_FLOAT, false,
+                    2*3, textureBuffer);
+
+
+
+
+
+
+            // get handle to shape's transformation matrix
+            mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+            MyGLRenderer.checkGlError("glGetUniformLocation");
+
+            // Apply the projection and view transformation
+            GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+            MyGLRenderer.checkGlError("glUniformMatrix4fv");
+
+            // Draw the triangle
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
+
+            // Disable vertex array
+            GLES20.glDisableVertexAttribArray(mPositionHandle);
+
+
+
+        }else {
         // get handle to vertex shader's vPosition member
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
 
@@ -143,6 +263,7 @@ public class Triangle {
 
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(mPositionHandle);
+        }
     }
 
 }
