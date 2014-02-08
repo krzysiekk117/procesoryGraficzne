@@ -1,5 +1,7 @@
 package com.example.android.opengl;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 /**
@@ -34,6 +36,16 @@ public class Piramid {
         front = new Triangle(frontCoords);
         float colFront[] = {1.0f,0f,0f,1f};
         front.setColor(colFront);
+
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex);
+        float texCords[] = {
+                0.5f,1.0f,
+                0f,0f,
+                1f,0f
+        };
+//
+//        mTriangle.setTexture(bitmap,texCords);
+
 
         float leftCoords[] = {
                 piramidCoords[0],piramidCoords[1],piramidCoords[2],
