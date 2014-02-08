@@ -61,10 +61,20 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 
 
 
-        mPiramid = new Piramid(context);
+//        mPiramid = new Piramid(context);
 //        mszescian = new szescian();
 
+        mSquare = new Square(Square.squareCoords);
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), R.raw.tex);
 
+        float texCords[] = {
+                1f,1f,
+                0f,1f,
+                0f,0f,
+                1f,0f
+        };
+
+        mSquare.setTexture(bitmap,texCords);
     }
 
 
@@ -106,7 +116,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(scratch, 0, mMVPMatrix, 0, mRotationMatrix, 0);
 
         // Draw triangle
-        mPiramid.draw(scratch);
+        mSquare.draw(scratch);
 //        mTriangle.draw(scratch);
     }
 

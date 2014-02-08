@@ -20,7 +20,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 /**
  * A two-dimensional square for use as a drawn object in OpenGL ES 2.0.
@@ -31,35 +33,64 @@ public class Square {
             // This matrix member variable provides a hook to manipulate
             // the coordinates of the objects that use this vertex shader
             "uniform mat4 uMVPMatrix;" +
-            "attribute vec4 vPosition;" +
-            "void main() {" +
-            // The matrix must be included as a modifier of gl_Position.
-            // Note that the uMVPMatrix factor *must be first* in order
-            // for the matrix multiplication product to be correct.
-            "  gl_Position = uMVPMatrix * vPosition;" +
-            "}";
+                    "attribute vec4 vPosition;" +
+                    "void main() {" +
+                    // The matrix must be included as a modifier of gl_Position.
+                    // Note that the uMVPMatrix factor *must be first* in order
+                    // for the matrix multiplication product to be correct.
+                    "  gl_Position = uMVPMatrix * vPosition;" +
+                    "}";
 
     private final String fragmentShaderCode =
             "precision mediump float;" +
-            "uniform vec4 vColor;" +
-            "void main() {" +
-            "  gl_FragColor = vColor;" +
-            "}";
+                    "uniform vec4 vColor;" +
+                    "void main() {" +
+                    "  gl_FragColor = vColor;" +
+                    "}";
+
+
+    private final String textureVertexShaderCode =
+            " uniform mat4 uMVPMatrix;" +
+                    "attribute vec4 vPosition;  \n" +
+                    "attribute vec2 a_texCoord;   \n" +
+                    "varying vec2 v_texCoord;     \n" +
+                    "void main()                  \n" +
+                    "{                            \n" +
+                    "   gl_Position = uMVPMatrix * vPosition; \n" +
+                    "   v_texCoord = a_texCoord;  \n" +
+                    "}                            \n";
+
+    private final String textureFragmentShaderCode =
+            "precision mediump float;                            \n" +
+                    "varying vec2 v_texCoord;                            \n" +
+                    "uniform sampler2D s_texture;                        \n" +
+                    "void main()                                         \n" +
+                    "{                                                   \n" +
+                    "  gl_FragColor = texture2D(s_texture, v_texCoord);  \n" +
+                    "}      \n ";
+
+
 
     private final FloatBuffer vertexBuffer;
     private final ShortBuffer drawListBuffer;
-    private final int mProgram;
+    private int mProgram;
     private int mPositionHandle;
     private int mColorHandle;
     private int mMVPMatrixHandle;
 
+    private int mTexCordsHandle;
+    private boolean hasTexture;
+    private FloatBuffer textureBuffer;  // buffer holding the texture coordinate
+    private int[] textures = new int[1];
+    float textureCoords[];
+
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
-    float squareCoords[] = {
+    static float squareCoords[] = {
             -0.5f,  0.5f, 0.0f,   // top left
             -0.5f, -0.5f, 0.0f,   // bottom left
-             0.5f, -0.5f, 0.0f,   // bottom right
-             0.5f,  0.5f, 0.0f }; // top right
+            0.5f, -0.5f, 0.0f,   // bottom right
+            0.5f,  0.5f, 0.0f }; // top right
 
     private final short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
 
@@ -75,11 +106,51 @@ public class Square {
         color = col;
     };
 
+
+    public void setTexture(Bitmap tex,float texCords[]){
+        hasTexture = true;
+        textureCoords = texCords;
+
+
+        ByteBuffer bb = ByteBuffer.allocateDirect( textureCoords.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+        textureBuffer = bb.asFloatBuffer();
+        textureBuffer.put(textureCoords);
+        textureBuffer.position(0);
+
+        GLES20.glGenTextures(1, textures, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, tex, 0);
+
+        tex.recycle();
+
+
+
+        // prepare shaders and OpenGL program
+        int vertexShader = MyGLRenderer.loadShader(
+                GLES20.GL_VERTEX_SHADER, textureVertexShaderCode);
+        int fragmentShader = MyGLRenderer.loadShader(
+                GLES20.GL_FRAGMENT_SHADER, textureFragmentShaderCode);
+
+        mProgram = GLES20.glCreateProgram();             // create empty OpenGL Program
+        GLES20.glAttachShader(mProgram, vertexShader);   // add the vertex shader to program
+        GLES20.glAttachShader(mProgram, fragmentShader); // add the fragment shader to program
+        GLES20.glLinkProgram(mProgram);                  // create OpenGL program executables
+
+
+
+
+    }
     public Square(float coords[]) {
+
+
+
         squareCoords = coords;
         // initialize vertex byte buffer for shape coordinates
         ByteBuffer bb = ByteBuffer.allocateDirect(
-        // (# of coordinate values * 4 bytes per float)
+                // (# of coordinate values * 4 bytes per float)
                 squareCoords.length * 4);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
@@ -119,39 +190,90 @@ public class Square {
         // Add program to OpenGL environment
         GLES20.glUseProgram(mProgram);
 
-        // get handle to vertex shader's vPosition member
-        mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
 
-        // Enable a handle to the triangle vertices
-        GLES20.glEnableVertexAttribArray(mPositionHandle);
+        if (hasTexture){
+            // get handle to vertex shader's vPosition member
+            mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
 
-        // Prepare the triangle coordinate data
-        GLES20.glVertexAttribPointer(
-                mPositionHandle, COORDS_PER_VERTEX,
-                GLES20.GL_FLOAT, false,
-                vertexStride, vertexBuffer);
+            // Enable a handle to the triangle vertices
+            GLES20.glEnableVertexAttribArray(mPositionHandle);
 
-        // get handle to fragment shader's vColor member
-        mColorHandle = GLES20.glGetUniformLocation(mProgram, "vColor");
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                    mPositionHandle, COORDS_PER_VERTEX,
+                    GLES20.GL_FLOAT, false,
+                    vertexStride, vertexBuffer);
 
-        // Set color for drawing the triangle
-        GLES20.glUniform4fv(mColorHandle, 1, color, 0);
 
-        // get handle to shape's transformation matrix
-        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
-        MyGLRenderer.checkGlError("glGetUniformLocation");
+            mTexCordsHandle = GLES20.glGetAttribLocation(mProgram, "a_texCoord");
 
-        // Apply the projection and view transformation
-        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
-        MyGLRenderer.checkGlError("glUniformMatrix4fv");
+            // Enable a handle to the texture vertices
+            GLES20.glEnableVertexAttribArray(mTexCordsHandle);
 
-        // Draw the square
-        GLES20.glDrawElements(
-                GLES20.GL_TRIANGLES, drawOrder.length,
-                GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                    mTexCordsHandle, 2,
+                    GLES20.GL_FLOAT, false,
+                    2*4, textureBuffer);
 
-        // Disable vertex array
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
+
+
+
+
+
+            // get handle to shape's transformation matrix
+            mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+            MyGLRenderer.checkGlError("glGetUniformLocation");
+
+            // Apply the projection and view transformation
+            GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+            MyGLRenderer.checkGlError("glUniformMatrix4fv");
+
+            // Draw the square
+            GLES20.glDrawElements(
+                    GLES20.GL_TRIANGLES, drawOrder.length,
+                    GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+            // Disable vertex array
+            GLES20.glDisableVertexAttribArray(mPositionHandle);
+
+
+
+        }else {
+
+            // get handle to vertex shader's vPosition member
+            mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
+
+            // Enable a handle to the triangle vertices
+            GLES20.glEnableVertexAttribArray(mPositionHandle);
+
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                    mPositionHandle, COORDS_PER_VERTEX,
+                    GLES20.GL_FLOAT, false,
+                    vertexStride, vertexBuffer);
+
+            // get handle to fragment shader's vColor member
+            mColorHandle = GLES20.glGetUniformLocation(mProgram, "vColor");
+
+            // Set color for drawing the triangle
+            GLES20.glUniform4fv(mColorHandle, 1, color, 0);
+
+            // get handle to shape's transformation matrix
+            mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+            MyGLRenderer.checkGlError("glGetUniformLocation");
+
+            // Apply the projection and view transformation
+            GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+            MyGLRenderer.checkGlError("glUniformMatrix4fv");
+
+            // Draw the square
+            GLES20.glDrawElements(
+                    GLES20.GL_TRIANGLES, drawOrder.length,
+                    GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+
+            // Disable vertex array
+            GLES20.glDisableVertexAttribArray(mPositionHandle);
+        }
     }
 
 }
